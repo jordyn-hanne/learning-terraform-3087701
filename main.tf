@@ -17,7 +17,7 @@ data "aws_ami" "app_ami" {
 module "blog_vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
-  name = "dev"
+  name = "blog-vpc"
   cidr = "10.0.0.0/16"
 
   azs             = ["us-west-2", "us-west-2", "us-west-2"]
@@ -29,43 +29,53 @@ module "blog_vpc" {
   }
 }
 
-resource "aws_instance" "blog" {
-  ami           = data.aws_ami.app_ami.id
-  instance_type = var.instance_type
-  vpc_security_group_ids = [module.blog_sg.security_group_id]
-
-  subnet_id = module.blog_vpc.public_subnets[0]
-
-  tags = {
-    Name = "HelloWorld"
-  }
-}
-
-module "alb" {
+module "blog_alb" {
   source = "terraform-aws-modules/alb/aws"
 
-  name    = "blog-alb"
-  vpc_id  = module.blog_vpc.vpc_id
-  subnets = module.blog_vpc.public_subnets
+  name            = "blog-alb"
+  vpc_id          = module.blog_vpc.vpc_id
+  subnets         = module.blog_vpc.public_subnets
   security_groups = module.blog_sg.security_group_id
-
-   forward = {
-    target_group_key = aws_instance.blog.id
-      }
 
   target_groups = {
     ex-instance = {
+      target_id        = aws_instance.blog.id
       name_prefix      = "blog-"
       protocol         = "HTTP"
       port             = 80
       target_type      = "instance"
     }
   }
+  
+  listeners = {
+    ex-http-https-redirect = {
+      port     = 80
+      protocol = "HTTP"
+      redirect = {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
 
   tags = {
     Environment = "dev"
   }
 }
+
+resource "aws_instance" "blog" {
+  ami           = data.aws_ami.app_ami.id
+  instance_type = var.instance_type
+  vpc_security_group_ids = [module.blog_sg.security_group_id]
+
+  subnet_id = module.blog-vpc.public_subnets[0]
+
+  tags = {
+    Name = "HelloWorld"
+  }
+}
+
+
 
 module "blog_sg" {
   source  = "terraform-aws-modules/security-group/aws"
