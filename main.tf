@@ -61,7 +61,7 @@ module "blog_alb" {
   tags = {
     Environment = "dev"
   }
-}
+ }
 }
 
 resource "aws_instance" "blog" {
@@ -69,7 +69,7 @@ resource "aws_instance" "blog" {
   instance_type = var.instance_type
   vpc_security_group_ids = [module.blog_sg.security_group_id]
 
-  subnet_id = module.blog-vpc.public_subnets[0]
+  subnet_id = module.blog_vpc.public_subnets[0]
 
   tags = {
     Name = "HelloWorld"
