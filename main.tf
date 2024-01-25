@@ -46,23 +46,11 @@ module "blog_alb" {
       target_type      = "instance"
     }
   }
-  
-  listeners = {
-    ex-http-https-redirect = {
-      port     = 80
-      protocol = "HTTP"
-      redirect = {
-        port        = "443"
-        protocol    = "HTTPS"
-        status_code = "HTTP_301"
-      }
-    }
 
   tags = {
     Environment = "dev"
   }
  }
-}
 
 resource "aws_instance" "blog" {
   ami           = data.aws_ami.app_ami.id
